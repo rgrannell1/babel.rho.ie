@@ -5,4 +5,16 @@ export class OpenLibraryClient {
   userAgent() {
     return `${config.OPENAPI_APPLICATION}:${config.OPENAPI_EMAIL}`;
   }
+
+  getCover() {
+
+  }
+
+  getTitle() {
+
+  }
+
+  getAuthor() {
+
+  }
 }

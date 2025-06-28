@@ -4,8 +4,8 @@ import type { Book, Quote } from "./types.ts";
 const QUOTES_TEMPLATE = await Deno.readTextFile(
   "./src/templates/quotes.html.mustache",
 );
-const ACTIVITY_TEMPLATE = await Deno.readTextFile(
-  "./src/templates/activity.html.mustache",
+const INDEX_TEMPLATE = await Deno.readTextFile(
+  "./src/templates/index.html.mustache",
 );
 const READ_TEMPLATE = await Deno.readTextFile(
   "./src/templates/read.html.mustache",
@@ -20,8 +20,8 @@ export class Render {
       COMMON_HEADERS,
     });
   }
-  activity() {
-    return render(ACTIVITY_TEMPLATE, {
+  index() {
+    return render(INDEX_TEMPLATE, {
       COMMON_HEADERS,
     });
   }

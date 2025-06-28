@@ -11,7 +11,7 @@ async function writeDist() {
 
   await Promise.all([
     Deno.writeTextFile("./dist/quotes.html", renderer.quotes(userData.quotes)),
-    Deno.writeTextFile("./dist/activity.html", renderer.activity()),
+    Deno.writeTextFile("./dist/index.html", renderer.index()),
     Deno.writeTextFile("./dist/books.html", renderer.read(userData.read)),
   ]);
 
