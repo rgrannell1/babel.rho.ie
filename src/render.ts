@@ -28,9 +28,9 @@ export class Render {
   read(books: Book[]) {
     return render(READ_TEMPLATE, {
       COMMON_HEADERS,
-      read: books.map(book => {
-        return {...book, title: 'Testing'}
-      })
+      read: books.map((book) => {
+        return { ...book, title: "Testing" };
+      }),
     });
   }
 }

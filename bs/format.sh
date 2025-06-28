@@ -1,3 +1,3 @@
-#! /usr/bin env sh
+#! /usr/bin/env sh
 
-deno format
+deno fmt
