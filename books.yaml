@@ -9,18 +9,10 @@ read:
   - id: "https://openlibrary.org/works/OL31119W/The_will_to_change"
     rating: "⭐⭐⭐⭐"
     shelves: [Sociology, Gender, Feminism]
-    tags: []
-    notes: []
     review: ""
     readDates: [
       "Jun 23, 2025 06:38AM"
     ]
-    progress: [
-      "25% | Jun 22, 2025 09:29AM"
-    ]
-
-hard_copies:
-  -
 
 quotes:
   - source: "Pablo Neruda"

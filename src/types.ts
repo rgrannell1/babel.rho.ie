@@ -19,3 +19,22 @@ export interface UserInfo {
   read: Book[];
   quotes: Quote[];
 }
+
+export interface GoodreadsBook {
+  id: string;
+  title: string;
+  author: string;
+  isbn: string;
+  isbn13: string;
+  rating: string;
+  pages: string;
+  status: string;
+  dateRead?: string;
+}
+
+export interface Cover {
+  url: string;
+  isbn: string;
+  isbn13: string;
+  content: Uint8Array;
+}

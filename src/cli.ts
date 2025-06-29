@@ -1,24 +1,38 @@
-import { UserInfoReader } from "./readers.ts";
-import { Render } from "./render.ts";
+import { docopt } from "./deps.ts";
+import { fromGoodreads, writeDist, fetchCovers } from "./index.ts";
 
-const renderer = new Render();
+const doc = `
+  Babel
 
-const userInfo = new UserInfoReader("books.yaml");
-const userData = await userInfo.read();
+   ⬢ ⬢
+  ⬢ ⬡ ⬢
+   ⬢ ⬢
 
-async function writeDist() {
-  await Deno.mkdir("./dist", { recursive: true });
+Usage:
+  babel build
+  babel from_goodreads
+  babel (-h | --help)
+  babel --version
 
-  await Promise.all([
-    Deno.writeTextFile("./dist/quotes.html", renderer.quotes(userData.quotes)),
-    Deno.writeTextFile("./dist/index.html", renderer.index()),
-    Deno.writeTextFile("./dist/books.html", renderer.read(userData.read)),
-  ]);
+Commands:
+  build     Build the static website from books.yaml
 
-  await Deno.mkdir("./dist/css", { recursive: true });
-  for await (const file of Deno.readDir("./src/css")) {
-    await Deno.copyFile(`./src/css/${file.name}`, `./dist/css/${file.name}`);
+Options:
+  -h --help     Show this screen.
+  --version     Show version.
+`;
+
+async function main() {
+  const args = docopt(doc, { version: "1.0.0" });
+
+  if (args.build) {
+    await fetchCovers();
+    await writeDist();
+  } else if (args.from_goodreads)  {
+    await fromGoodreads();
   }
 }
 
-await writeDist();
+if (import.meta.main) {
+  main();
+}
