@@ -1,5 +1,5 @@
 import { render } from "./deps.ts";
-import type { Book, Quote } from "./types.ts";
+import type { Book, GoodreadsBook, Quote } from "./types.ts";
 
 const QUOTES_TEMPLATE = await Deno.readTextFile(
   "./src/templates/quotes.html.mustache",
@@ -25,12 +25,13 @@ export class Render {
       COMMON_HEADERS,
     });
   }
-  read(books: Book[]) {
+  read(books: GoodreadsBook[]) {
+
+    console.log(books.filter(book => book.status === 'read'))
+
     return render(READ_TEMPLATE, {
       COMMON_HEADERS,
-      read: books.map((book) => {
-        return { ...book, title: "Testing" };
-      }),
+      books: books.filter(book => book.status === 'read')
     });
   }
 }

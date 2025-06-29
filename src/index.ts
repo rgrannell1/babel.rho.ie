@@ -45,7 +45,7 @@ export async function writeDist() {
   await Promise.all([
     Deno.writeTextFile("./dist/quotes.html", renderer.quotes(userData.quotes)),
     Deno.writeTextFile("./dist/index.html", renderer.index()),
-    Deno.writeTextFile("./dist/books.html", renderer.read(userData.read)),
+    Deno.writeTextFile("./dist/books.html", renderer.read(db.read())),
   ]);
 
   await Deno.mkdir("./dist/css", { recursive: true });

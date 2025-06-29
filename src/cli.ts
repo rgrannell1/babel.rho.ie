@@ -26,7 +26,7 @@ async function main() {
   const args = docopt(doc, { version: "1.0.0" });
 
   if (args.build) {
-    await fetchCovers();
+    //await fetchCovers();
     await writeDist();
   } else if (args.from_goodreads)  {
     await fromGoodreads();

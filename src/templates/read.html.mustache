@@ -3,23 +3,18 @@
     {{{ COMMON_HEADERS }}}
   </head>
   <body>
-    <h1>Read</h1>
+    <h1>Books</h1>
 
-    <!-- Render a list of books -->
+    <!-- Render a list of quotes -->
     <ul class="book-list">
-      {{ #read }}
+      {{ #books }}
         <li>
-          <div class="book">
-            <h2><a href="{{ id }}">{{ title }}</a></h2>
-
-            <ul>
-              {{ #shelves }}
-              <li>{{ . }}</li>
-              {{ /shelves }}
-            </ul>
-          </div>
+          <h2>{{title}}</h2>
+          <address rel="author">{{author}}</address>
+          <date>{{dateRead}}</date>
+          <div>{{rating}}</div>
         </li>
-      {{ /read }}
+      {{ /books }}
     </ul>
   </body>
 </html>
