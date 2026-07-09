@@ -1,0 +1,160 @@
+/* Literary, ornamented serif throughout; clinical structure. */
+
+:root {
+  --ink: #1a1a1a;
+  --muted: #555;
+  --hairline: #d9d9d9;
+  --panel: #fafafa;
+  --accent: #b31b1b;
+}
+
+body {
+  font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  margin: 2rem auto 4rem;
+  max-width: 88ch;
+  padding: 0 1rem;
+  background: #fff;
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 0.4rem;
+}
+
+h2.section-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant: small-caps;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+h2.section-label::before {
+  content: '❦ ';
+  color: var(--accent);
+}
+
+button {
+  font: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+div.search {
+  margin: 1rem 0;
+}
+
+div.search textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  border: 1px solid var(--hairline);
+  margin-bottom: 0.4rem;
+}
+
+p.search-message {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+section.position,
+section.directions {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--hairline);
+  background: var(--panel);
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+section.directions ul {
+  margin: 0.25rem 0;
+  padding-left: 1.5rem;
+}
+
+code.address {
+  cursor: pointer;
+  word-break: break-all;
+  background: #fff;
+  border: 1px solid var(--hairline);
+  padding: 0.1rem 0.3rem;
+}
+
+.address-row button {
+  margin-left: 0.5rem;
+}
+
+div.book-header {
+  margin: 1.5rem 0 0.5rem;
+  text-align: center;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* The page of the book: a literary object, set in serif, with Kindle-style
+   page-turn margins. */
+div.book {
+  position: relative;
+}
+
+button.page-turn {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  width: 2.5rem;
+  border: none;
+  background: transparent;
+  font-size: 1.7rem;
+  color: var(--hairline);
+  cursor: pointer;
+}
+
+button.page-turn:hover {
+  border: none;
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+button.page-turn.prev {
+  left: 1px;
+}
+
+button.page-turn.next {
+  right: 1px;
+}
+
+pre.page {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  border: 1px solid var(--hairline);
+  padding: 2rem 2.5rem 1.25rem;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+div.page-number {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  text-align: center;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
