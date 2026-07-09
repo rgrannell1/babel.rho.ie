@@ -22528,6 +22528,7 @@ var PAGES_PER_BOOK = 410;
 var LINES_PER_PAGE = 40;
 var CHARS_PER_LINE = 80;
 var CHARS_PER_PAGE = LINES_PER_PAGE * CHARS_PER_LINE;
+var CHARS_PER_BOOK = PAGES_PER_BOOK * CHARS_PER_PAGE;
 var ALPHABET = "abcdefghijklmnopqrstuvwxyz .";
 var ALPHABET_SIZE = BigInt(ALPHABET.length);
 var WALLS_PER_HEXAGON = 4;
@@ -22739,6 +22740,19 @@ function magnitudeLatex(value, digits = MAGNITUDE_DIGITS) {
     return value.toString();
   }
   return `${leading[0]}.${leading.slice(1)} \\times 10^{${exponent}}`;
+}
+function roundMagnitudeLatex(value) {
+  const text2 = value.toString();
+  if (text2.length <= 3) {
+    return text2;
+  }
+  let leading = Math.round(Number(text2.slice(0, 2)) / 10);
+  let exponent = text2.length - 1;
+  if (leading === 10) {
+    leading = 1;
+    exponent += 1;
+  }
+  return `${leading} \\times 10^{${exponent}}`;
 }
 function collapseAddress(address, head = 8, tail = 6) {
   if (address.length <= head + tail + 1) {
@@ -23264,7 +23278,7 @@ function DirectionsPanel(position) {
     ),
     (0, import_mithril.default)("div.distance-summary", [
       `it's about `,
-      TeXAmount(distance.amount),
+      typeof distance.amount === "bigint" ? TeX(roundMagnitudeLatex(distance.amount)) : TeX(distance.amount),
       ` ${distance.unit} away `,
       (0, import_mithril.default)("span.aside", [
         "(",

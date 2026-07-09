@@ -1,12 +1,12 @@
 /* Literary, ornamented serif on warm paper; rust accents. */
 
 :root {
-  --ink: #3d372e;
+  --ink: #524b3c;
   --muted: #9a8d7c;
-  --hairline: #e0d8c8;
+  --hairline: #e4ddce;
   --paper: #f6f2ea;
-  --panel: #fdfcf9;
-  --accent: #a84f2f;
+  --panel: #fbf9f4;
+  --accent: #ab5c3e;
 }
 
 body {
@@ -83,7 +83,7 @@ section.directions {
   padding: 1.1rem 1.4rem 1.3rem;
   border: 1px solid var(--hairline);
   background: var(--panel);
-  box-shadow: 2px 3px 10px rgba(96, 78, 52, 0.09);
+  box-shadow: 2px 3px 10px rgba(96, 78, 52, 0.06);
   font-size: 1rem;
   line-height: 1.7;
 }
@@ -121,7 +121,7 @@ span.aside {
 code.address {
   cursor: pointer;
   word-break: break-all;
-  background: #fff;
+  background: var(--paper);
   border: 1px solid var(--hairline);
   padding: 0.35rem 0.6rem;
 }
@@ -174,7 +174,7 @@ pre.page {
   border: 1px solid var(--hairline);
   padding: 2rem 2.5rem 1.25rem;
   background: var(--panel);
-  box-shadow: 2px 3px 10px rgba(96, 78, 52, 0.09);
+  box-shadow: 2px 3px 10px rgba(96, 78, 52, 0.06);
 }
 
 div.page-number {

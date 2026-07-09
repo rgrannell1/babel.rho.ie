@@ -2,13 +2,15 @@
 
 import { ceilDiv, icbrt } from './bignum.ts'
 
-// Page geometry (Borges: 410 pages of 40 lines, 80 characters each).
+// Page geometry (Borges/Bloch: 410 pages of 40 lines, 80 characters each).
 export const PAGES_PER_BOOK = 410
 export const LINES_PER_PAGE = 40
 export const CHARS_PER_LINE = 80
 export const CHARS_PER_PAGE = LINES_PER_PAGE * CHARS_PER_LINE // 3,200
+export const CHARS_PER_BOOK = PAGES_PER_BOOK * CHARS_PER_PAGE // 1,312,000
 
-// The 28 orthographic symbols: the English alphabet, space, full stop.
+// Bloch uses Borges' 25-symbol alphabet. This site deliberately uses a
+// 28-symbol alphabet: the English alphabet, space, and full stop.
 export const ALPHABET = 'abcdefghijklmnopqrstuvwxyz .'
 export const ALPHABET_SIZE = BigInt(ALPHABET.length) // 28n
 
@@ -20,8 +22,11 @@ export const BOOKS_PER_HEXAGON =
   WALLS_PER_HEXAGON * SHELVES_PER_WALL * VOLUMES_PER_SHELF // 640
 export const PAGES_PER_HEXAGON = BOOKS_PER_HEXAGON * PAGES_PER_BOOK // 262,400
 
-// Totals. PAGES_PER_HEXAGON has prime factors (5², 41) that TOTAL_PAGES
-// lacks, so the division is never exact: the final hexagon is partly empty.
+// Totals. Bloch counts full books: 25^1,312,000, or 28^1,312,000 with this
+// alphabet. This app instead permutes every possible page, 28^3,200, so
+// addresses stay usable while preserving the page-level combinatorics.
+// PAGES_PER_HEXAGON has prime factors (5², 41) that TOTAL_PAGES lacks, so
+// the division is never exact: the final hexagon is partly empty.
 export const TOTAL_PAGES = ALPHABET_SIZE ** BigInt(CHARS_PER_PAGE)
 export const TOTAL_HEXAGONS = ceilDiv(TOTAL_PAGES, BigInt(PAGES_PER_HEXAGON))
 

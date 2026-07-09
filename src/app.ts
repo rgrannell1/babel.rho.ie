@@ -18,7 +18,7 @@ function TeXAmount(amount: string | bigint) {
 }
 import { paramsToPosition, positionToParams } from './state.ts'
 import { randomBelow, toBase36 } from './bignum.ts'
-import { collapseAddress, magnitudeLatex } from './display.ts'
+import { collapseAddress, magnitudeLatex, roundMagnitudeLatex } from './display.ts'
 
 const state = {
   position: null as Position | null,
@@ -196,7 +196,9 @@ function DirectionsPanel(position: Position) {
     ),
     m('div.distance-summary', [
       `it's about `,
-      TeXAmount(distance.amount),
+      typeof distance.amount === 'bigint'
+        ? TeX(roundMagnitudeLatex(distance.amount))
+        : TeX(distance.amount),
       ` ${distance.unit} away `,
       m('span.aside', [
         '(',
