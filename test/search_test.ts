@@ -1,8 +1,8 @@
 import { assert, assertEquals } from '@std/assert'
-import { exactPage, findText, normalise, pagesContaining } from '../src/search.ts'
+import { findText, normalise, pagesContaining } from '../src/search.ts'
 import { encrypt } from '../src/cipher.ts'
 import { pageToText } from '../src/page.ts'
-import { ALPHABET_SIZE, CHARS_PER_PAGE, DEFAULT_QUOTE } from '../src/constants.ts'
+import { ALPHABET_SIZE, CHARS_PER_PAGE } from '../src/constants.ts'
 
 Deno.test('normalise maps text onto the alphabet', () => {
   assertEquals(normalise('Hello, World!'), 'hello world.')
@@ -21,16 +21,6 @@ Deno.test('two searches for the same text find different pages', async () => {
   const first = await findText('babel')
   const second = await findText('babel')
   assert(first.index !== second.index)
-})
-
-Deno.test('the default quote sits on its own lines of a blank page', async () => {
-  const index = await exactPage(DEFAULT_QUOTE)
-  const text = pageToText(await encrypt(index))
-  assert(text.startsWith('my words fly up my thoughts remain below.'))
-  assertEquals(text.slice(80, 122), 'words without thoughts never to heaven go.')
-  assertEquals(text.slice(160).trim(), '')
-  // Deterministic: the same quote always finds the same page.
-  assertEquals(await exactPage(DEFAULT_QUOTE), index)
 })
 
 Deno.test('the count of containing pages is astronomical but finite', () => {

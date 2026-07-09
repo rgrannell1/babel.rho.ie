@@ -7,7 +7,13 @@ import { CHARS_PER_LINE, DEFAULT_QUOTE, LINES_PER_PAGE, TOTAL_PAGES } from './co
 import { hexagonToTorus, indexToPosition, type Position, positionToIndex } from './position.ts'
 import { step, type StepUnit } from './navigate.ts'
 import { findText, normalise, pagesContaining } from './search.ts'
-import { displacement, distanceParts, durationParts, walkSeconds } from './directions.ts'
+import {
+  displacement,
+  distanceParts,
+  durationParts,
+  nearbyHexagonsToSearch,
+  walkSeconds,
+} from './directions.ts'
 
 function TeX(latex: string) {
   return m.trust(katex.renderToString(latex, { throwOnError: false }))
@@ -126,7 +132,11 @@ async function runSearch() {
     const { index, normalised } = await findText(searchState.input)
     const seconds = ((performance.now() - started) / 1000).toFixed(1)
     if (sequence !== searchState.sequence) return
-    searchState.found = { normalised, count: pagesContaining(normalised.length), seconds }
+    searchState.found = {
+      normalised,
+      count: pagesContaining(normalised.length),
+      seconds,
+    }
     searchState.error = ''
     showPosition(indexToPosition(index), 'replace')
   } catch (error) {
@@ -205,6 +215,7 @@ function DirectionsPanel(position: Position) {
     ])
   }
   const total = legs.reduce((sum, leg) => sum + leg.decimetres, 0n)
+  const nearby = nearbyHexagonsToSearch(legs)
   const vertical = legs.find((leg) => leg.direction === 'up' || leg.direction === 'down')
   const horizontal = legs.filter((leg) => leg !== vertical)
   const distance = distanceParts(total)
@@ -213,7 +224,7 @@ function DirectionsPanel(position: Position) {
     SectionLabel('directions'),
     vertical && m('div', [
       m('em.verb', vertical.direction === 'up' ? 'climb' : 'descend'),
-      ' ~',
+      ' ≈ ',
       TeXAmount(vertical.hexagons),
       ' floors',
     ]),
@@ -221,7 +232,7 @@ function DirectionsPanel(position: Position) {
       m('div', [m('em.verb', 'walk'), ' ', TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
     ),
     m('div.distance-summary', [
-      `it's about `,
+      '≈ ',
       RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       m('span.aside', [
@@ -229,6 +240,11 @@ function DirectionsPanel(position: Position) {
         RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`,
       ]),
+    ]),
+    nearby > 1n && m('div.search-radius', [
+      'our directions are imprecise. search ',
+      RoundAmount(nearby),
+      ' nearby hexagons',
     ]),
   ])
 }

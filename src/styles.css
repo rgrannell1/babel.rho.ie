@@ -120,6 +120,11 @@ span.aside {
   color: var(--muted);
 }
 
+div.search-radius {
+  color: var(--muted);
+  font-style: italic;
+}
+
 code.address {
   cursor: pointer;
   word-break: break-all;

@@ -10,7 +10,8 @@ import {
   WALKING_METRES_PER_HOUR,
 } from './constants.ts'
 import { hexagonToTorus } from './position.ts'
-import { formatMagnitude } from './display.ts'
+import { formatMagnitude, MAGNITUDE_DIGITS } from './display.ts'
+import { truncationError } from './bignum.ts'
 
 export type Leg = { direction: string; hexagons: bigint; decimetres: bigint }
 
@@ -37,6 +38,13 @@ export function displacement(hexagon: bigint): Leg[] {
     wrapLeg(row, TORUS_ROWS, 'north', 'south', HEXAGON_WIDTH_DECIMETRES),
     wrapLeg(column, TORUS_COLUMNS, 'east', 'west', HEXAGON_WIDTH_DECIMETRES),
   ].filter((leg) => leg.hexagons > 0n)
+}
+
+export function nearbyHexagonsToSearch(legs: Leg[]): bigint {
+  return legs.reduce((count, leg) => {
+    const radius = truncationError(leg.hexagons, MAGNITUDE_DIGITS)
+    return count * (radius * 2n + 1n)
+  }, 1n)
 }
 
 // Amounts stay bigint so the UI can typeset them; strings are already exact.

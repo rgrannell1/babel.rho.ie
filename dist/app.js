@@ -22522,6 +22522,13 @@ function magnitude(value, digits = 20) {
   const text2 = value.toString();
   return { leading: text2.slice(0, digits), exponent: text2.length - 1 };
 }
+function truncationError(value, digits = 20) {
+  const text2 = value.toString();
+  if (text2.length <= digits) {
+    return 0n;
+  }
+  return value - BigInt(text2.slice(0, digits)) * 10n ** BigInt(text2.length - digits);
+}
 
 // src/constants.ts
 var PAGES_PER_BOOK = 410;
@@ -22780,6 +22787,12 @@ function displacement(hexagon) {
     wrapLeg(row, TORUS_ROWS, "north", "south", HEXAGON_WIDTH_DECIMETRES),
     wrapLeg(column, TORUS_COLUMNS, "east", "west", HEXAGON_WIDTH_DECIMETRES)
   ].filter((leg) => leg.hexagons > 0n);
+}
+function nearbyHexagonsToSearch(legs) {
+  return legs.reduce((count, leg) => {
+    const radius = truncationError(leg.hexagons, MAGNITUDE_DIGITS);
+    return count * (radius * 2n + 1n);
+  }, 1n);
 }
 function distanceParts(decimetres) {
   if (decimetres < 10000n) {
@@ -23211,7 +23224,11 @@ async function runSearch() {
     const { index, normalised } = await findText(searchState.input);
     const seconds = ((performance.now() - started) / 1e3).toFixed(1);
     if (sequence !== searchState.sequence) return;
-    searchState.found = { normalised, count: pagesContaining(normalised.length), seconds };
+    searchState.found = {
+      normalised,
+      count: pagesContaining(normalised.length),
+      seconds
+    };
     searchState.error = "";
     showPosition(indexToPosition(index), "replace");
   } catch (error) {
@@ -23284,6 +23301,7 @@ function DirectionsPanel(position) {
     ]);
   }
   const total = legs.reduce((sum, leg) => sum + leg.decimetres, 0n);
+  const nearby = nearbyHexagonsToSearch(legs);
   const vertical = legs.find((leg) => leg.direction === "up" || leg.direction === "down");
   const horizontal = legs.filter((leg) => leg !== vertical);
   const distance = distanceParts(total);
@@ -23292,7 +23310,7 @@ function DirectionsPanel(position) {
     SectionLabel("directions"),
     vertical && (0, import_mithril.default)("div", [
       (0, import_mithril.default)("em.verb", vertical.direction === "up" ? "climb" : "descend"),
-      " ~",
+      " \u2248 ",
       TeXAmount(vertical.hexagons),
       " floors"
     ]),
@@ -23300,7 +23318,7 @@ function DirectionsPanel(position) {
       (leg) => (0, import_mithril.default)("div", [(0, import_mithril.default)("em.verb", "walk"), " ", TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
     ),
     (0, import_mithril.default)("div.distance-summary", [
-      `it's about `,
+      "\u2248 ",
       RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       (0, import_mithril.default)("span.aside", [
@@ -23308,6 +23326,11 @@ function DirectionsPanel(position) {
         RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`
       ])
+    ]),
+    nearby > 1n && (0, import_mithril.default)("div.search-radius", [
+      "our directions are imprecise. search ",
+      RoundAmount(nearby),
+      " nearby hexagons"
     ])
   ]);
 }

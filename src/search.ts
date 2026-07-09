@@ -1,7 +1,7 @@
 // Search: build a full page containing the sought text, then run the
 // cipher backwards to find where that page lives.
 
-import { ALPHABET, ALPHABET_SIZE, CHARS_PER_LINE, CHARS_PER_PAGE } from './constants.ts'
+import { ALPHABET, ALPHABET_SIZE, CHARS_PER_PAGE } from './constants.ts'
 import { decrypt } from './cipher.ts'
 import { textToPage } from './page.ts'
 import { randomBelow } from './bignum.ts'
@@ -43,16 +43,6 @@ export async function findText(
   }
   const index = await decrypt(textToPage(chars.join('')))
   return { index, offset, normalised }
-}
-
-// The one page where each given line sits on its own row of an otherwise
-// blank page. Deterministic: the same lines always find the same page.
-export async function exactPage(lines: string[]): Promise<bigint> {
-  const text = lines
-    .map((line) => normalise(line).padEnd(CHARS_PER_LINE, ' '))
-    .join('')
-    .padEnd(CHARS_PER_PAGE, ' ')
-  return await decrypt(textToPage(text))
 }
 
 // How many pages of the Library contain the text: (positions it can start
