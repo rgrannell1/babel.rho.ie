@@ -96,8 +96,11 @@ const searchState = {
 async function runSearch() {
   const sequence = ++searchState.sequence
   if (normalise(searchState.input).length === 0) {
+    // Cleared: back to no page selected.
     searchState.found = null
     searchState.error = ''
+    state.position = null
+    state.lines = []
     return
   }
   try {
@@ -139,7 +142,7 @@ function SearchBox() {
 function AddressRow(label: 'hexagon' | 'floor', value: bigint) {
   const encoded = toBase36(value)
   return m('div.address-row', [
-    `${label} `,
+    m('span.address-label', label),
     m(
       'code.address',
       {
@@ -156,19 +159,19 @@ function SectionLabel(text: string) {
   return m('h2.section-label', text)
 }
 
-function PositionPanel() {
-  const { hexagon, wall, shelf, volume, page } = state.position
+function PositionPanel(position: Position) {
+  const { hexagon, wall, shelf, volume, page } = position
   const { floor } = hexagonToTorus(hexagon)
   return m('section.position', [
     SectionLabel('address'),
-    m('div', `wall ${wall}, shelf ${shelf}, volume ${volume}, page ${page}`),
+    m('div.locus', [`wall ${wall}, shelf ${shelf}, volume ${volume}, `, m('em', 'page'), ` ${page}`]),
     AddressRow('hexagon', hexagon),
     AddressRow('floor', floor),
   ])
 }
 
-function DirectionsPanel() {
-  const legs = displacement(state.position.hexagon)
+function DirectionsPanel(position: Position) {
+  const legs = displacement(position.hexagon)
   if (legs.length === 0) {
     return m('section.directions', [
       SectionLabel('directions'),
@@ -183,19 +186,23 @@ function DirectionsPanel() {
   return m('section.directions', [
     SectionLabel('directions'),
     vertical && m('div', [
-      vertical.direction === 'up' ? 'climb ~' : 'descend ~',
+      m('em.verb', vertical.direction === 'up' ? 'climb' : 'descend'),
+      ' ~',
       TeXAmount(vertical.hexagons),
       ' floors',
     ]),
     horizontal.map((leg) =>
-      m('div', ['walk ', TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
+      m('div', [m('em.verb', 'walk'), ' ', TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
     ),
     m('div.distance-summary', [
       `it's about `,
       TeXAmount(distance.amount),
-      ` ${distance.unit} away (`,
-      TeXAmount(walk.amount),
-      ` ${walk.unit} at a quick pace)`,
+      ` ${distance.unit} away `,
+      m('span.aside', [
+        '(',
+        TeXAmount(walk.amount),
+        ` ${walk.unit} at a quick pace)`,
+      ]),
     ]),
   ])
 }
@@ -222,6 +229,7 @@ function BookPage() {
 
 const PageView = {
   view() {
+    const { position } = state
     return m('main', [
       m('h1', 'The Library of Babel'),
       m('nav', [
@@ -230,31 +238,30 @@ const PageView = {
         m('button', { onclick: showAbout }, 'about'),
       ]),
       SearchBox(),
-      PositionPanel(),
-      DirectionsPanel(),
-      m(
-        'div.book-header',
-        `wall ${state.position.wall} · shelf ${state.position.shelf} · volume ${state.position.volume}`,
-      ),
-      m('div.book', [
-        m('button.page-turn.prev', {
-          onclick: () => stepTo('page', -1),
-          title: 'previous page',
-        }, '‹'),
-        BookPage(),
-        m('button.page-turn.next', {
-          onclick: () => stepTo('page', 1),
-          title: 'next page',
-        }, '›'),
-      ]),
-      m('div.page-number', `· ${state.position.page} ·`),
+      position !== null && [
+        PositionPanel(position),
+        DirectionsPanel(position),
+        m(
+          'div.book-header',
+          `wall ${position.wall} · shelf ${position.shelf} · volume ${position.volume}`,
+        ),
+        m('div.book', [
+          m('button.page-turn.prev', {
+            onclick: () => stepTo('page', -1),
+            title: 'previous page',
+          }, '‹'),
+          BookPage(),
+          m('button.page-turn.next', {
+            onclick: () => stepTo('page', 1),
+            title: 'next page',
+          }, '›'),
+        ]),
+        m('div.page-number', `· ${position.page} ·`),
+      ],
     ])
   },
 }
 
 m.mount(document.body, PageView)
-globalThis.addEventListener(
-  'popstate',
-  async () => showPosition(await positionFromUrl(), false),
-)
-positionFromUrl().then((position) => showPosition(position, false))
+globalThis.addEventListener('popstate', syncFromUrl)
+syncFromUrl()

@@ -23109,7 +23109,7 @@ function TeXAmount(amount) {
   return TeX(typeof amount === "bigint" ? magnitudeLatex(amount) : amount);
 }
 var state = {
-  position: indexToPosition(0n),
+  position: null,
   lines: [],
   expanded: { hexagon: false, floor: false }
 };
@@ -23126,19 +23126,18 @@ async function showPosition(position, pushHistory) {
   );
   import_mithril.default.redraw();
 }
-async function positionFromUrl() {
+function syncFromUrl() {
   try {
     const position = paramsToPosition(globalThis.location.search.slice(1));
     positionToIndex(position);
-    return position;
+    showPosition(position, false);
   } catch {
-    const query = DEFAULT_QUOTE.join(" ");
-    const started = performance.now();
-    const { index, normalised } = await findText(query);
-    const seconds = ((performance.now() - started) / 1e3).toFixed(1);
-    searchState.input = query;
-    searchState.found = { normalised, count: pagesContaining(normalised.length), seconds };
-    return indexToPosition(index);
+    state.position = null;
+    state.lines = [];
+    searchState.input = DEFAULT_QUOTE.join(" ");
+    searchState.found = null;
+    searchState.error = "";
+    import_mithril.default.redraw();
   }
 }
 function randomPage() {
@@ -23158,6 +23157,7 @@ async function showAbout() {
   runSearch();
 }
 function stepTo(unit, direction) {
+  if (state.position === null) return;
   const index = step(positionToIndex(state.position), unit, direction);
   showPosition(indexToPosition(index), true);
 }
@@ -23172,6 +23172,8 @@ async function runSearch() {
   if (normalise(searchState.input).length === 0) {
     searchState.found = null;
     searchState.error = "";
+    state.position = null;
+    state.lines = [];
     return;
   }
   try {
@@ -23211,7 +23213,7 @@ function SearchBox() {
 function AddressRow(label, value) {
   const encoded = toBase36(value);
   return (0, import_mithril.default)("div.address-row", [
-    `${label} `,
+    (0, import_mithril.default)("span.address-label", label),
     (0, import_mithril.default)(
       "code.address",
       {
@@ -23226,18 +23228,18 @@ function AddressRow(label, value) {
 function SectionLabel(text2) {
   return (0, import_mithril.default)("h2.section-label", text2);
 }
-function PositionPanel() {
-  const { hexagon, wall, shelf, volume, page } = state.position;
+function PositionPanel(position) {
+  const { hexagon, wall, shelf, volume, page } = position;
   const { floor } = hexagonToTorus(hexagon);
   return (0, import_mithril.default)("section.position", [
     SectionLabel("address"),
-    (0, import_mithril.default)("div", `wall ${wall}, shelf ${shelf}, volume ${volume}, page ${page}`),
+    (0, import_mithril.default)("div.locus", [`wall ${wall}, shelf ${shelf}, volume ${volume}, `, (0, import_mithril.default)("em", "page"), ` ${page}`]),
     AddressRow("hexagon", hexagon),
     AddressRow("floor", floor)
   ]);
 }
-function DirectionsPanel() {
-  const legs = displacement(state.position.hexagon);
+function DirectionsPanel(position) {
+  const legs = displacement(position.hexagon);
   if (legs.length === 0) {
     return (0, import_mithril.default)("section.directions", [
       SectionLabel("directions"),
@@ -23252,19 +23254,23 @@ function DirectionsPanel() {
   return (0, import_mithril.default)("section.directions", [
     SectionLabel("directions"),
     vertical && (0, import_mithril.default)("div", [
-      vertical.direction === "up" ? "climb ~" : "descend ~",
+      (0, import_mithril.default)("em.verb", vertical.direction === "up" ? "climb" : "descend"),
+      " ~",
       TeXAmount(vertical.hexagons),
       " floors"
     ]),
     horizontal.map(
-      (leg) => (0, import_mithril.default)("div", ["walk ", TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
+      (leg) => (0, import_mithril.default)("div", [(0, import_mithril.default)("em.verb", "walk"), " ", TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
     ),
     (0, import_mithril.default)("div.distance-summary", [
       `it's about `,
       TeXAmount(distance.amount),
-      ` ${distance.unit} away (`,
-      TeXAmount(walk.amount),
-      ` ${walk.unit} at a quick pace)`
+      ` ${distance.unit} away `,
+      (0, import_mithril.default)("span.aside", [
+        "(",
+        TeXAmount(walk.amount),
+        ` ${walk.unit} at a quick pace)`
+      ])
     ])
   ]);
 }
@@ -23287,6 +23293,7 @@ function BookPage() {
 }
 var PageView = {
   view() {
+    const { position } = state;
     return (0, import_mithril.default)("main", [
       (0, import_mithril.default)("h1", "The Library of Babel"),
       (0, import_mithril.default)("nav", [
@@ -23295,30 +23302,29 @@ var PageView = {
         (0, import_mithril.default)("button", { onclick: showAbout }, "about")
       ]),
       SearchBox(),
-      PositionPanel(),
-      DirectionsPanel(),
-      (0, import_mithril.default)(
-        "div.book-header",
-        `wall ${state.position.wall} \xB7 shelf ${state.position.shelf} \xB7 volume ${state.position.volume}`
-      ),
-      (0, import_mithril.default)("div.book", [
-        (0, import_mithril.default)("button.page-turn.prev", {
-          onclick: () => stepTo("page", -1),
-          title: "previous page"
-        }, "\u2039"),
-        BookPage(),
-        (0, import_mithril.default)("button.page-turn.next", {
-          onclick: () => stepTo("page", 1),
-          title: "next page"
-        }, "\u203A")
-      ]),
-      (0, import_mithril.default)("div.page-number", `\xB7 ${state.position.page} \xB7`)
+      position !== null && [
+        PositionPanel(position),
+        DirectionsPanel(position),
+        (0, import_mithril.default)(
+          "div.book-header",
+          `wall ${position.wall} \xB7 shelf ${position.shelf} \xB7 volume ${position.volume}`
+        ),
+        (0, import_mithril.default)("div.book", [
+          (0, import_mithril.default)("button.page-turn.prev", {
+            onclick: () => stepTo("page", -1),
+            title: "previous page"
+          }, "\u2039"),
+          BookPage(),
+          (0, import_mithril.default)("button.page-turn.next", {
+            onclick: () => stepTo("page", 1),
+            title: "next page"
+          }, "\u203A")
+        ]),
+        (0, import_mithril.default)("div.page-number", `\xB7 ${position.page} \xB7`)
+      ]
     ]);
   }
 };
 import_mithril.default.mount(document.body, PageView);
-globalThis.addEventListener(
-  "popstate",
-  async () => showPosition(await positionFromUrl(), false)
-);
-positionFromUrl().then((position) => showPosition(position, false));
+globalThis.addEventListener("popstate", syncFromUrl);
+syncFromUrl();
