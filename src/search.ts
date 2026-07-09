@@ -18,7 +18,6 @@ export function normalise(text: string): string {
     .filter((char) => ALPHABET.includes(char) || /\s/.test(char))
     .join('')
     .replace(/\s+/g, ' ')
-    .trim()
 }
 
 // Place the text at a random offset on a page of random characters, and

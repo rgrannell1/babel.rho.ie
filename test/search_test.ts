@@ -8,6 +8,7 @@ Deno.test('normalise maps text onto the alphabet', () => {
   assertEquals(normalise('Hello, World!'), 'hello world.')
   assertEquals(normalise('Café — déjà vu?'), 'cafe deja vu.')
   assertEquals(normalise('B0RG3S'), 'brgs')
+  assertEquals(normalise('hello '), 'hello ')
 })
 
 Deno.test('found pages really contain the text', async () => {

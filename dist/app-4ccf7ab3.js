@@ -22713,7 +22713,7 @@ function step(index, unit, direction) {
 
 // src/search.ts
 function normalise(text2) {
-  return text2.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[!?;:]/g, ".").split("").filter((char) => ALPHABET.includes(char) || /\s/.test(char)).join("").replace(/\s+/g, " ").trim();
+  return text2.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[!?;:]/g, ".").split("").filter((char) => ALPHABET.includes(char) || /\s/.test(char)).join("").replace(/\s+/g, " ");
 }
 async function findText(raw) {
   const normalised = normalise(raw);
