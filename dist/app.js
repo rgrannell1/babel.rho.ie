@@ -22741,9 +22741,9 @@ function magnitudeLatex(value, digits = MAGNITUDE_DIGITS) {
   }
   return `${leading[0]}.${leading.slice(1)} \\times 10^{${exponent}}`;
 }
-function roundMagnitudeLatex(value) {
+function roundMagnitude(value) {
   const text2 = value.toString();
-  if (text2.length <= 3) {
+  if (text2.length <= 2) {
     return text2;
   }
   let leading = Math.round(Number(text2.slice(0, 2)) / 10);
@@ -22752,7 +22752,10 @@ function roundMagnitudeLatex(value) {
     leading = 1;
     exponent += 1;
   }
-  return `${leading} \\times 10^{${exponent}}`;
+  if (exponent < 4) {
+    return (BigInt(leading) * 10n ** BigInt(exponent)).toString();
+  }
+  return `${leading} \xD7 10^${exponent}`;
 }
 function collapseAddress(address, head = 8, tail = 6) {
   if (address.length <= head + tail + 1) {
@@ -23127,11 +23130,19 @@ var state = {
   lines: [],
   expanded: { hexagon: false, floor: false }
 };
-async function showPosition(position, pushHistory) {
+function positionUrl(position) {
+  return "?" + positionToParams(position).toString();
+}
+function clearPositionUrl() {
+  history.replaceState(null, "", globalThis.location.pathname);
+}
+async function showPosition(position, routeUpdate) {
   state.position = position;
   state.expanded = { hexagon: false, floor: false };
-  if (pushHistory) {
-    history.pushState(null, "", "?" + positionToParams(position).toString());
+  if (routeUpdate === "push") {
+    history.pushState(null, "", positionUrl(position));
+  } else if (routeUpdate === "replace") {
+    history.replaceState(null, "", positionUrl(position));
   }
   const text2 = pageToText(await encrypt(positionToIndex(position)));
   state.lines = Array.from(
@@ -23144,7 +23155,7 @@ function syncFromUrl() {
   try {
     const position = paramsToPosition(globalThis.location.search.slice(1));
     positionToIndex(position);
-    showPosition(position, false);
+    showPosition(position, "none");
   } catch {
     state.position = null;
     state.lines = [];
@@ -23159,7 +23170,7 @@ function randomPage() {
   searchState.found = null;
   searchState.error = "";
   searchState.sequence++;
-  showPosition(indexToPosition(randomBelow(TOTAL_PAGES)), true);
+  showPosition(indexToPosition(randomBelow(TOTAL_PAGES)), "push");
 }
 var aboutText = null;
 async function showAbout() {
@@ -23173,7 +23184,7 @@ async function showAbout() {
 function stepTo(unit, direction) {
   if (state.position === null) return;
   const index = step(positionToIndex(state.position), unit, direction);
-  showPosition(indexToPosition(index), true);
+  showPosition(indexToPosition(index), "push");
 }
 var searchState = {
   input: "",
@@ -23181,6 +23192,10 @@ var searchState = {
   found: null,
   sequence: 0
 };
+function fitSearchTextarea(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+}
 async function runSearch() {
   const sequence = ++searchState.sequence;
   if (normalise(searchState.input).length === 0) {
@@ -23188,6 +23203,7 @@ async function runSearch() {
     searchState.error = "";
     state.position = null;
     state.lines = [];
+    clearPositionUrl();
     return;
   }
   try {
@@ -23197,7 +23213,7 @@ async function runSearch() {
     if (sequence !== searchState.sequence) return;
     searchState.found = { normalised, count: pagesContaining(normalised.length), seconds };
     searchState.error = "";
-    showPosition(indexToPosition(index), false);
+    showPosition(indexToPosition(index), "replace");
   } catch (error) {
     if (sequence !== searchState.sequence) return;
     searchState.error = error.message;
@@ -23211,8 +23227,12 @@ function SearchBox() {
       rows: 2,
       placeholder: "find text in the Library\u2026",
       value: searchState.input,
+      oncreate: (vnode) => fitSearchTextarea(vnode.dom),
+      onupdate: (vnode) => fitSearchTextarea(vnode.dom),
       oninput: (event) => {
-        searchState.input = event.target.value;
+        const textarea = event.target;
+        searchState.input = textarea.value;
+        fitSearchTextarea(textarea);
         runSearch();
       }
     }),
@@ -23241,6 +23261,9 @@ function AddressRow(label, value) {
 }
 function SectionLabel(text2) {
   return (0, import_mithril.default)("h2.section-label", text2);
+}
+function RoundAmount(amount) {
+  return typeof amount === "bigint" ? roundMagnitude(amount) : amount;
 }
 function PositionPanel(position) {
   const { hexagon, wall, shelf, volume, page } = position;
@@ -23278,11 +23301,11 @@ function DirectionsPanel(position) {
     ),
     (0, import_mithril.default)("div.distance-summary", [
       `it's about `,
-      typeof distance.amount === "bigint" ? TeX(roundMagnitudeLatex(distance.amount)) : TeX(distance.amount),
+      RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       (0, import_mithril.default)("span.aside", [
         "(",
-        TeXAmount(walk.amount),
+        RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`
       ])
     ])

@@ -18,7 +18,7 @@ function TeXAmount(amount: string | bigint) {
 }
 import { paramsToPosition, positionToParams } from './state.ts'
 import { randomBelow, toBase36 } from './bignum.ts'
-import { collapseAddress, magnitudeLatex, roundMagnitudeLatex } from './display.ts'
+import { collapseAddress, magnitudeLatex, roundMagnitude } from './display.ts'
 
 const state = {
   position: null as Position | null,
@@ -26,11 +26,23 @@ const state = {
   expanded: { hexagon: false, floor: false },
 }
 
-async function showPosition(position: Position, pushHistory: boolean) {
+type RouteUpdate = 'none' | 'push' | 'replace'
+
+function positionUrl(position: Position) {
+  return '?' + positionToParams(position).toString()
+}
+
+function clearPositionUrl() {
+  history.replaceState(null, '', globalThis.location.pathname)
+}
+
+async function showPosition(position: Position, routeUpdate: RouteUpdate) {
   state.position = position
   state.expanded = { hexagon: false, floor: false }
-  if (pushHistory) {
-    history.pushState(null, '', '?' + positionToParams(position).toString())
+  if (routeUpdate === 'push') {
+    history.pushState(null, '', positionUrl(position))
+  } else if (routeUpdate === 'replace') {
+    history.replaceState(null, '', positionUrl(position))
   }
   const text = pageToText(await encrypt(positionToIndex(position)))
   state.lines = Array.from(
@@ -44,7 +56,7 @@ function syncFromUrl() {
   try {
     const position = paramsToPosition(globalThis.location.search.slice(1))
     positionToIndex(position) // rejects positions past the final hexagon's last shelf
-    showPosition(position, false)
+    showPosition(position, 'none')
   } catch {
     // No (or broken) address: no page selected. The default quote waits in
     // the search box for the visitor's first move.
@@ -62,7 +74,7 @@ function randomPage() {
   searchState.found = null
   searchState.error = ''
   searchState.sequence++ // cancel any in-flight search
-  showPosition(indexToPosition(randomBelow(TOTAL_PAGES)), true)
+  showPosition(indexToPosition(randomBelow(TOTAL_PAGES)), 'push')
 }
 
 // The about text lives in the Library, of course. Load it into the search
@@ -81,7 +93,7 @@ async function showAbout() {
 function stepTo(unit: StepUnit, direction: 1 | -1) {
   if (state.position === null) return
   const index = step(positionToIndex(state.position), unit, direction)
-  showPosition(indexToPosition(index), true)
+  showPosition(indexToPosition(index), 'push')
 }
 
 const searchState = {
@@ -89,6 +101,11 @@ const searchState = {
   error: '',
   found: null as { normalised: string; count: bigint; seconds: string } | null,
   sequence: 0,
+}
+
+function fitSearchTextarea(textarea: HTMLTextAreaElement) {
+  textarea.style.height = 'auto'
+  textarea.style.height = `${textarea.scrollHeight}px`
 }
 
 // Fires on every keystroke; the sequence guard drops stale results so a
@@ -101,6 +118,7 @@ async function runSearch() {
     searchState.error = ''
     state.position = null
     state.lines = []
+    clearPositionUrl()
     return
   }
   try {
@@ -110,7 +128,7 @@ async function runSearch() {
     if (sequence !== searchState.sequence) return
     searchState.found = { normalised, count: pagesContaining(normalised.length), seconds }
     searchState.error = ''
-    showPosition(indexToPosition(index), false)
+    showPosition(indexToPosition(index), 'replace')
   } catch (error) {
     if (sequence !== searchState.sequence) return
     searchState.error = (error as Error).message
@@ -125,8 +143,12 @@ function SearchBox() {
       rows: 2,
       placeholder: 'find text in the Library…',
       value: searchState.input,
+      oncreate: (vnode: m.VnodeDOM) => fitSearchTextarea(vnode.dom as HTMLTextAreaElement),
+      onupdate: (vnode: m.VnodeDOM) => fitSearchTextarea(vnode.dom as HTMLTextAreaElement),
       oninput: (event: InputEvent) => {
-        searchState.input = (event.target as HTMLTextAreaElement).value
+        const textarea = event.target as HTMLTextAreaElement
+        searchState.input = textarea.value
+        fitSearchTextarea(textarea)
         runSearch()
       },
     }),
@@ -157,6 +179,10 @@ function AddressRow(label: 'hexagon' | 'floor', value: bigint) {
 
 function SectionLabel(text: string) {
   return m('h2.section-label', text)
+}
+
+function RoundAmount(amount: string | bigint) {
+  return typeof amount === 'bigint' ? roundMagnitude(amount) : amount
 }
 
 function PositionPanel(position: Position) {
@@ -196,13 +222,11 @@ function DirectionsPanel(position: Position) {
     ),
     m('div.distance-summary', [
       `it's about `,
-      typeof distance.amount === 'bigint'
-        ? TeX(roundMagnitudeLatex(distance.amount))
-        : TeX(distance.amount),
+      RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       m('span.aside', [
         '(',
-        TeXAmount(walk.amount),
+        RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`,
       ]),
     ]),

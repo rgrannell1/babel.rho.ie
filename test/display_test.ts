@@ -1,5 +1,5 @@
 import { assert, assertEquals } from '@std/assert'
-import { collapseAddress, formatMagnitude, shelfErrorRadius } from '../src/display.ts'
+import { collapseAddress, formatMagnitude, roundMagnitude, shelfErrorRadius } from '../src/display.ts'
 import { TOTAL_HEXAGONS } from '../src/constants.ts'
 
 Deno.test('small numbers are shown exactly, large ones in magnitude form', () => {
@@ -9,6 +9,13 @@ Deno.test('small numbers are shown exactly, large ones in magnitude form', () =>
     formatMagnitude(31234567891234567891234n),
     '3.1234567891234567891 × 10^22',
   )
+})
+
+Deno.test('about quantities round to one significant figure', () => {
+  assertEquals(roundMagnitude(42n), '42')
+  assertEquals(roundMagnitude(196n), '200')
+  assertEquals(roundMagnitude(1967n), '2000')
+  assertEquals(roundMagnitude(19670141045507392831n * 10n ** 1507n), '2 × 10^1526')
 })
 
 Deno.test('the deepest hexagon formats plausibly', () => {

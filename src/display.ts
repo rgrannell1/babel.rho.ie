@@ -32,10 +32,10 @@ export function magnitudeLatex(value: bigint, digits = MAGNITUDE_DIGITS): string
   return `${leading[0]}.${leading.slice(1)} \\times 10^{${exponent}}`
 }
 
-// One-significant-figure LaTeX for "about" quantities: "2 \times 10^{1526}".
-export function roundMagnitudeLatex(value: bigint): string {
+// One-significant-figure text for "about" quantities: "2 × 10^1526".
+export function roundMagnitude(value: bigint): string {
   const text = value.toString()
-  if (text.length <= 3) {
+  if (text.length <= 2) {
     return text
   }
   let leading = Math.round(Number(text.slice(0, 2)) / 10)
@@ -44,7 +44,15 @@ export function roundMagnitudeLatex(value: bigint): string {
     leading = 1
     exponent += 1
   }
-  return `${leading} \\times 10^{${exponent}}`
+  if (exponent < 4) {
+    return (BigInt(leading) * 10n ** BigInt(exponent)).toString()
+  }
+  return `${leading} × 10^${exponent}`
+}
+
+// One-significant-figure LaTeX for "about" quantities: "2 \times 10^{1526}".
+export function roundMagnitudeLatex(value: bigint): string {
+  return roundMagnitude(value).replace('×', '\\times ').replace(/\^(.+)$/, '^{$1}')
 }
 
 // "k7f2q9d3…x03mz2" — head and tail of a long address.
