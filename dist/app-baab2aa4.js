@@ -22764,6 +22764,9 @@ function roundMagnitude(value) {
   }
   return `${leading} \xD7 10^${exponent}`;
 }
+function roundMagnitudeLatex(value) {
+  return roundMagnitude(value).replace("\xD7", "\\times ").replace(/\^(.+)$/, "^{$1}");
+}
 function collapseAddress(address, head = 8, tail = 6) {
   if (address.length <= head + tail + 1) {
     return address;
@@ -23175,7 +23178,7 @@ function syncFromUrl() {
     searchState.input = DEFAULT_QUOTE.join(" ");
     searchState.found = null;
     searchState.error = "";
-    import_mithril.default.redraw();
+    runSearch();
   }
 }
 function randomPage() {
@@ -23188,7 +23191,7 @@ function randomPage() {
 var aboutText = null;
 async function showAbout() {
   if (aboutText === null) {
-    const response = await fetch("prose.md");
+    const response = await fetch("prose-7829deae.md");
     aboutText = (await response.text()).trim();
   }
   searchState.input = aboutText;
@@ -23280,7 +23283,13 @@ function SectionLabel(text2) {
   return (0, import_mithril.default)("h2.section-label", text2);
 }
 function RoundAmount(amount) {
-  return typeof amount === "bigint" ? roundMagnitude(amount) : amount;
+  return typeof amount === "bigint" ? TeX(roundMagnitudeLatex(amount)) : amount;
+}
+function MagnitudeApprox(amount) {
+  return amount.toString().length > MAGNITUDE_DIGITS ? "\u2248 " : "";
+}
+function RoundApprox(amount) {
+  return typeof amount === "bigint" && amount.toString().length > 2 ? "\u2248 " : "";
 }
 function PositionPanel(position) {
   const { hexagon, wall, shelf, volume, page } = position;
@@ -23310,25 +23319,34 @@ function DirectionsPanel(position) {
     SectionLabel("directions"),
     vertical && (0, import_mithril.default)("div", [
       (0, import_mithril.default)("em.verb", vertical.direction === "up" ? "climb" : "descend"),
-      " \u2248 ",
+      " ",
+      MagnitudeApprox(vertical.hexagons),
       TeXAmount(vertical.hexagons),
       " floors"
     ]),
     horizontal.map(
-      (leg) => (0, import_mithril.default)("div", [(0, import_mithril.default)("em.verb", "walk"), " ", TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
+      (leg) => (0, import_mithril.default)("div", [
+        (0, import_mithril.default)("em.verb", "walk"),
+        " ",
+        MagnitudeApprox(leg.hexagons),
+        TeXAmount(leg.hexagons),
+        ` hexagons ${leg.direction}`
+      ])
     ),
     (0, import_mithril.default)("div.distance-summary", [
-      "\u2248 ",
+      RoundApprox(distance.amount),
       RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       (0, import_mithril.default)("span.aside", [
         "(",
+        RoundApprox(walk.amount),
         RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`
       ])
     ]),
     nearby > 1n && (0, import_mithril.default)("div.search-radius", [
       "our directions are imprecise. search ",
+      RoundApprox(nearby),
       RoundAmount(nearby),
       " nearby hexagons"
     ])

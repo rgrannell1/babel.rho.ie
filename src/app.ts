@@ -24,7 +24,9 @@ function TeXAmount(amount: string | bigint) {
 }
 import { paramsToPosition, positionToParams } from './state.ts'
 import { randomBelow, toBase36 } from './bignum.ts'
-import { collapseAddress, magnitudeLatex, roundMagnitude } from './display.ts'
+import { collapseAddress, MAGNITUDE_DIGITS, magnitudeLatex, roundMagnitudeLatex } from './display.ts'
+
+declare const ABOUT_TEXT_URL: string
 
 const state = {
   position: null as Position | null,
@@ -64,14 +66,14 @@ function syncFromUrl() {
     positionToIndex(position) // rejects positions past the final hexagon's last shelf
     showPosition(position, 'none')
   } catch {
-    // No (or broken) address: no page selected. The default quote waits in
-    // the search box for the visitor's first move.
+    // No (or broken) address: search for the default quote immediately so
+    // the page, address, and directions are visible on first load.
     state.position = null
     state.lines = []
     searchState.input = DEFAULT_QUOTE.join(' ')
     searchState.found = null
     searchState.error = ''
-    m.redraw()
+    runSearch()
   }
 }
 
@@ -89,7 +91,7 @@ let aboutText: string | null = null
 
 async function showAbout() {
   if (aboutText === null) {
-    const response = await fetch('prose.md')
+    const response = await fetch(ABOUT_TEXT_URL)
     aboutText = (await response.text()).trim()
   }
   searchState.input = aboutText
@@ -192,7 +194,15 @@ function SectionLabel(text: string) {
 }
 
 function RoundAmount(amount: string | bigint) {
-  return typeof amount === 'bigint' ? roundMagnitude(amount) : amount
+  return typeof amount === 'bigint' ? TeX(roundMagnitudeLatex(amount)) : amount
+}
+
+function MagnitudeApprox(amount: bigint) {
+  return amount.toString().length > MAGNITUDE_DIGITS ? '≈ ' : ''
+}
+
+function RoundApprox(amount: string | bigint) {
+  return typeof amount === 'bigint' && amount.toString().length > 2 ? '≈ ' : ''
 }
 
 function PositionPanel(position: Position) {
@@ -224,25 +234,34 @@ function DirectionsPanel(position: Position) {
     SectionLabel('directions'),
     vertical && m('div', [
       m('em.verb', vertical.direction === 'up' ? 'climb' : 'descend'),
-      ' ≈ ',
+      ' ',
+      MagnitudeApprox(vertical.hexagons),
       TeXAmount(vertical.hexagons),
       ' floors',
     ]),
     horizontal.map((leg) =>
-      m('div', [m('em.verb', 'walk'), ' ', TeXAmount(leg.hexagons), ` hexagons ${leg.direction}`])
+      m('div', [
+        m('em.verb', 'walk'),
+        ' ',
+        MagnitudeApprox(leg.hexagons),
+        TeXAmount(leg.hexagons),
+        ` hexagons ${leg.direction}`,
+      ])
     ),
     m('div.distance-summary', [
-      '≈ ',
+      RoundApprox(distance.amount),
       RoundAmount(distance.amount),
       ` ${distance.unit} away `,
       m('span.aside', [
         '(',
+        RoundApprox(walk.amount),
         RoundAmount(walk.amount),
         ` ${walk.unit} at a quick pace)`,
       ]),
     ]),
     nearby > 1n && m('div.search-radius', [
       'our directions are imprecise. search ',
+      RoundApprox(nearby),
       RoundAmount(nearby),
       ' nearby hexagons',
     ]),
