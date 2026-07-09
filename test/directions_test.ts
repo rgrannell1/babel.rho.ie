@@ -49,14 +49,14 @@ Deno.test('nearby hexagons to search follows displayed direction imprecision', (
   assertEquals(nearbyHexagonsToSearch(displacement(1n)), 1n)
   assertEquals(
     nearbyHexagonsToSearch([
-      { direction: 'east', hexagons: 10n ** 20n + 7n, decimetres: 0n },
+      { direction: 'east', hexagons: 10n ** 30n + 7n, decimetres: 0n },
     ]),
     15n,
   )
   assertEquals(
     nearbyHexagonsToSearch([
-      { direction: 'east', hexagons: 10n ** 20n + 2n, decimetres: 0n },
-      { direction: 'north', hexagons: 10n ** 20n + 3n, decimetres: 0n },
+      { direction: 'east', hexagons: 10n ** 30n + 2n, decimetres: 0n },
+      { direction: 'north', hexagons: 10n ** 30n + 3n, decimetres: 0n },
     ]),
     35n,
   )

@@ -3,7 +3,7 @@
 import { magnitude, truncationError } from './bignum.ts'
 import { SHELVES_PER_WALL, WALLS_PER_HEXAGON } from './constants.ts'
 
-export const MAGNITUDE_DIGITS = 20
+export const MAGNITUDE_DIGITS = 30
 // The hexagon location gets double precision.
 export const HEXAGON_MAGNITUDE_DIGITS = 40
 

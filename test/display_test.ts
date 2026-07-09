@@ -6,8 +6,8 @@ Deno.test('small numbers are shown exactly, large ones in magnitude form', () =>
   assertEquals(formatMagnitude(0n), '0')
   assertEquals(formatMagnitude(42n), '42')
   assertEquals(
-    formatMagnitude(31234567891234567891234n),
-    '3.1234567891234567891 × 10^22',
+    formatMagnitude(3123456789123456789123456789123n),
+    '3.12345678912345678912345678912 × 10^30',
   )
 })
 

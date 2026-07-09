@@ -22740,7 +22740,7 @@ function pagesContaining(textLength) {
 }
 
 // src/display.ts
-var MAGNITUDE_DIGITS = 20;
+var MAGNITUDE_DIGITS = 30;
 function magnitudeLatex(value, digits = MAGNITUDE_DIGITS) {
   const { leading, exponent } = magnitude(value, digits);
   if (exponent < digits) {
