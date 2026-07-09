@@ -1,5 +1,7 @@
 import { assert, assertEquals, assertThrows } from '@std/assert'
 import {
+  floorAddressToHexagon,
+  hexagonToFloorAddress,
   hexagonToTorus,
   indexToPosition,
   positionToIndex,
@@ -46,4 +48,11 @@ Deno.test('torus coordinates round-trip', () => {
   for (const hexagon of [0n, 1n, TOTAL_HEXAGONS / 2n, TOTAL_HEXAGONS - 1n]) {
     assertEquals(torusToHexagon(hexagonToTorus(hexagon)), hexagon)
   }
+})
+
+Deno.test('floor addresses use hexagons local to the floor', () => {
+  const global = TORUS_ROWS * TORUS_COLUMNS + 7n
+  const address = hexagonToFloorAddress(global)
+  assertEquals(address, { floor: 1n, hexagon: 7n })
+  assertEquals(floorAddressToHexagon(address), global)
 })

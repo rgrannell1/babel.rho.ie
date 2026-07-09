@@ -4,7 +4,7 @@ import katex from 'katex'
 import { encrypt } from './cipher.ts'
 import { pageToText } from './page.ts'
 import { CHARS_PER_LINE, DEFAULT_QUOTE, LINES_PER_PAGE, TOTAL_PAGES } from './constants.ts'
-import { hexagonToTorus, indexToPosition, type Position, positionToIndex } from './position.ts'
+import { hexagonToFloorAddress, indexToPosition, type Position, positionToIndex } from './position.ts'
 import { step, type StepUnit } from './navigate.ts'
 import { findText, normalise, pagesContaining } from './search.ts'
 import {
@@ -207,12 +207,12 @@ function RoundApprox(amount: string | bigint) {
 
 function PositionPanel(position: Position) {
   const { hexagon, wall, shelf, volume, page } = position
-  const { floor } = hexagonToTorus(hexagon)
+  const address = hexagonToFloorAddress(hexagon)
   return m('section.position', [
     SectionLabel('address'),
     m('div.locus', [`wall ${wall}, shelf ${shelf}, volume ${volume}, `, m('em', 'page'), ` ${page}`]),
-    AddressRow('hexagon', hexagon),
-    AddressRow('floor', floor),
+    AddressRow('hexagon', address.hexagon),
+    AddressRow('floor', address.floor),
   ])
 }
 

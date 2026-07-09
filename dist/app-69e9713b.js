@@ -22661,6 +22661,7 @@ function textToPage(text2) {
 // src/position.ts
 var PAGES_PER_SHELF = VOLUMES_PER_SHELF * PAGES_PER_BOOK;
 var PAGES_PER_WALL = SHELVES_PER_WALL * PAGES_PER_SHELF;
+var HEXAGONS_PER_FLOOR = TORUS_ROWS * TORUS_COLUMNS;
 function indexToPosition(index) {
   if (index < 0n || index >= TOTAL_PAGES) {
     throw new RangeError("index outside the Library");
@@ -22690,12 +22691,37 @@ function hexagonToTorus(hexagon) {
   if (hexagon < 0n || hexagon >= TOTAL_HEXAGONS) {
     throw new RangeError("no such hexagon");
   }
-  const perFloor = TORUS_ROWS * TORUS_COLUMNS;
   return {
-    floor: hexagon / perFloor,
-    row: hexagon % perFloor / TORUS_COLUMNS,
+    floor: hexagon / HEXAGONS_PER_FLOOR,
+    row: hexagon % HEXAGONS_PER_FLOOR / TORUS_COLUMNS,
     column: hexagon % TORUS_COLUMNS
   };
+}
+function hexagonToFloorAddress(hexagon) {
+  const { floor, row, column } = hexagonToTorus(hexagon);
+  return { floor, hexagon: row * TORUS_COLUMNS + column };
+}
+function floorAddressToHexagon(address) {
+  const { floor, hexagon } = address;
+  if (hexagon < 0n || hexagon >= HEXAGONS_PER_FLOOR) {
+    throw new RangeError("hexagon outside the floor");
+  }
+  return torusToHexagon({
+    floor,
+    row: hexagon / TORUS_COLUMNS,
+    column: hexagon % TORUS_COLUMNS
+  });
+}
+function torusToHexagon(coordinate) {
+  const { floor, row, column } = coordinate;
+  if (floor < 0n || floor >= TORUS_FLOORS || row < 0n || row >= TORUS_ROWS || column < 0n || column >= TORUS_COLUMNS) {
+    throw new RangeError("coordinate outside the torus");
+  }
+  const hexagon = floor * TORUS_ROWS * TORUS_COLUMNS + row * TORUS_COLUMNS + column;
+  if (hexagon >= TOTAL_HEXAGONS) {
+    throw new RangeError("an empty cell past the final hexagon");
+  }
+  return hexagon;
 }
 
 // src/navigate.ts
@@ -23103,7 +23129,19 @@ function assertValid(ajv, validate, state2) {
 }
 
 // src/state.ts
-var codec = createCodec({
+var addressCodec = createCodec({
+  type: "object",
+  required: ["floor", "hexagon", "wall", "shelf", "volume", "page"],
+  properties: {
+    floor: { type: "string", pattern: "^[0-9a-z]+$" },
+    hexagon: { type: "string", pattern: "^[0-9a-z]+$" },
+    wall: { type: "integer", minimum: 1, maximum: WALLS_PER_HEXAGON },
+    shelf: { type: "integer", minimum: 1, maximum: SHELVES_PER_WALL },
+    volume: { type: "integer", minimum: 1, maximum: VOLUMES_PER_SHELF },
+    page: { type: "integer", minimum: 1, maximum: PAGES_PER_BOOK }
+  }
+});
+var legacyCodec = createCodec({
   type: "object",
   required: ["hexagon", "wall", "shelf", "volume", "page"],
   properties: {
@@ -23115,8 +23153,10 @@ var codec = createCodec({
   }
 });
 function positionToParams(position) {
-  return codec.encode({
-    hexagon: toBase36(position.hexagon),
+  const address = hexagonToFloorAddress(position.hexagon);
+  return addressCodec.encode({
+    floor: toBase36(address.floor),
+    hexagon: toBase36(address.hexagon),
     wall: position.wall,
     shelf: position.shelf,
     volume: position.volume,
@@ -23124,9 +23164,23 @@ function positionToParams(position) {
   });
 }
 function paramsToPosition(params) {
-  const state2 = codec.decode(params);
+  const search = typeof params === "string" ? new URLSearchParams(params) : params;
+  if (!search.has("floor")) {
+    const state3 = legacyCodec.decode(search);
+    return {
+      hexagon: fromBase36(state3.hexagon),
+      wall: state3.wall,
+      shelf: state3.shelf,
+      volume: state3.volume,
+      page: state3.page
+    };
+  }
+  const state2 = addressCodec.decode(search);
   return {
-    hexagon: fromBase36(state2.hexagon),
+    hexagon: floorAddressToHexagon({
+      floor: fromBase36(state2.floor),
+      hexagon: fromBase36(state2.hexagon)
+    }),
     wall: state2.wall,
     shelf: state2.shelf,
     volume: state2.volume,
@@ -23293,12 +23347,12 @@ function RoundApprox(amount) {
 }
 function PositionPanel(position) {
   const { hexagon, wall, shelf, volume, page } = position;
-  const { floor } = hexagonToTorus(hexagon);
+  const address = hexagonToFloorAddress(hexagon);
   return (0, import_mithril.default)("section.position", [
     SectionLabel("address"),
     (0, import_mithril.default)("div.locus", [`wall ${wall}, shelf ${shelf}, volume ${volume}, `, (0, import_mithril.default)("em", "page"), ` ${page}`]),
-    AddressRow("hexagon", hexagon),
-    AddressRow("floor", floor)
+    AddressRow("hexagon", address.hexagon),
+    AddressRow("floor", address.floor)
   ]);
 }
 function DirectionsPanel(position) {

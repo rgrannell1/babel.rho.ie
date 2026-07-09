@@ -1,5 +1,5 @@
 // A position index (0 ≤ index < TOTAL_PAGES) decomposes mixed-radix into
-// (hexagon, wall, shelf, volume, page), and a hexagon number decomposes
+// (global hexagon, wall, shelf, volume, page), and a hexagon number decomposes
 // into (floor, row, column) on the torus. Human-facing fields are 1-based.
 
 import {
@@ -29,8 +29,14 @@ export type TorusCoordinate = {
   column: bigint
 }
 
+export type FloorAddress = {
+  floor: bigint
+  hexagon: bigint
+}
+
 const PAGES_PER_SHELF = VOLUMES_PER_SHELF * PAGES_PER_BOOK
 const PAGES_PER_WALL = SHELVES_PER_WALL * PAGES_PER_SHELF
+const HEXAGONS_PER_FLOOR = TORUS_ROWS * TORUS_COLUMNS
 
 export function indexToPosition(index: bigint): Position {
   if (index < 0n || index >= TOTAL_PAGES) {
@@ -71,12 +77,28 @@ export function hexagonToTorus(hexagon: bigint): TorusCoordinate {
   if (hexagon < 0n || hexagon >= TOTAL_HEXAGONS) {
     throw new RangeError('no such hexagon')
   }
-  const perFloor = TORUS_ROWS * TORUS_COLUMNS
   return {
-    floor: hexagon / perFloor,
-    row: (hexagon % perFloor) / TORUS_COLUMNS,
+    floor: hexagon / HEXAGONS_PER_FLOOR,
+    row: (hexagon % HEXAGONS_PER_FLOOR) / TORUS_COLUMNS,
     column: hexagon % TORUS_COLUMNS,
   }
+}
+
+export function hexagonToFloorAddress(hexagon: bigint): FloorAddress {
+  const { floor, row, column } = hexagonToTorus(hexagon)
+  return { floor, hexagon: row * TORUS_COLUMNS + column }
+}
+
+export function floorAddressToHexagon(address: FloorAddress): bigint {
+  const { floor, hexagon } = address
+  if (hexagon < 0n || hexagon >= HEXAGONS_PER_FLOOR) {
+    throw new RangeError('hexagon outside the floor')
+  }
+  return torusToHexagon({
+    floor,
+    row: hexagon / TORUS_COLUMNS,
+    column: hexagon % TORUS_COLUMNS,
+  })
 }
 
 export function torusToHexagon(coordinate: TorusCoordinate): bigint {
