@@ -23245,7 +23245,7 @@ function randomPage() {
 var aboutText = null;
 async function showAbout() {
   if (aboutText === null) {
-    const response = await fetch("prose-7829deae.md");
+    const response = await fetch("prose-b8cc46b7.md");
     aboutText = (await response.text()).trim();
   }
   searchState.input = aboutText;
