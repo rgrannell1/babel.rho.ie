@@ -22,7 +22,7 @@ function TeX(latex: string) {
 function TeXAmount(amount: string | bigint) {
   return TeX(typeof amount === 'bigint' ? magnitudeLatex(amount) : amount)
 }
-import { paramsToPosition, positionToParams } from './state.ts'
+import { paramsToState, stateToParams } from './state.ts'
 import { randomBelow, toBase36 } from './bignum.ts'
 import { collapseAddress, MAGNITUDE_DIGITS, magnitudeLatex, roundMagnitudeLatex } from './display.ts'
 
@@ -36,35 +36,45 @@ const state = {
 
 type RouteUpdate = 'none' | 'push' | 'replace'
 
-function positionUrl(position: Position) {
-  return '?' + positionToParams(position).toString()
+function positionUrl(position: Position, text?: string) {
+  return '?' + stateToParams({ position, text }).toString()
 }
 
 function clearPositionUrl() {
   history.replaceState(null, '', globalThis.location.pathname)
 }
 
-async function showPosition(position: Position, routeUpdate: RouteUpdate) {
+async function showPosition(position: Position, routeUpdate: RouteUpdate, text?: string) {
   state.position = position
   state.expanded = { hexagon: false, floor: false }
   if (routeUpdate === 'push') {
-    history.pushState(null, '', positionUrl(position))
+    history.pushState(null, '', positionUrl(position, text))
   } else if (routeUpdate === 'replace') {
-    history.replaceState(null, '', positionUrl(position))
+    history.replaceState(null, '', positionUrl(position, text))
   }
-  const text = pageToText(await encrypt(positionToIndex(position)))
+  const pageText = pageToText(await encrypt(positionToIndex(position)))
   state.lines = Array.from(
     { length: LINES_PER_PAGE },
-    (_, lineIndex) => text.slice(lineIndex * CHARS_PER_LINE, (lineIndex + 1) * CHARS_PER_LINE),
+    (_, lineIndex) => pageText.slice(lineIndex * CHARS_PER_LINE, (lineIndex + 1) * CHARS_PER_LINE),
   )
   m.redraw()
 }
 
 function syncFromUrl() {
   try {
-    const position = paramsToPosition(globalThis.location.search.slice(1))
+    const { position, text } = paramsToState(globalThis.location.search.slice(1))
     positionToIndex(position) // rejects positions past the final hexagon's last shelf
-    showPosition(position, 'none')
+    // A shared search link carries its text: restore the search box, the
+    // match count, and (via found.normalised) the highlight on the page.
+    searchState.sequence++ // cancel any in-flight search
+    searchState.input = text ?? ''
+    searchState.error = ''
+    searchState.found = text === undefined ? null : {
+      normalised: text,
+      count: pagesContaining(text.length),
+      seconds: null,
+    }
+    showPosition(position, 'none', text)
   } catch {
     // No (or broken) address: search for the default quote immediately so
     // the page, address, and directions are visible on first load.
@@ -107,7 +117,7 @@ function stepTo(unit: StepUnit, direction: 1 | -1) {
 const searchState = {
   input: '',
   error: '',
-  found: null as { normalised: string; count: bigint; seconds: string } | null,
+  found: null as { normalised: string; count: bigint; seconds: string | null } | null,
   sequence: 0,
 }
 
@@ -140,7 +150,7 @@ async function runSearch() {
       seconds,
     }
     searchState.error = ''
-    showPosition(indexToPosition(index), 'replace')
+    showPosition(indexToPosition(index), 'replace', normalised)
   } catch (error) {
     if (sequence !== searchState.sequence) return
     searchState.error = (error as Error).message
@@ -168,7 +178,8 @@ function SearchBox() {
     searchState.found && m('p.search-message', [
       'found ',
       TeX(magnitudeLatex(searchState.found.count)),
-      ` matching pages in ${searchState.found.seconds}s`,
+      ' matching pages',
+      searchState.found.seconds !== null && ` in ${searchState.found.seconds}s`,
     ]),
   ])
 }

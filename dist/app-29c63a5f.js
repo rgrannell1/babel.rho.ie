@@ -23138,7 +23138,8 @@ var addressCodec = createCodec({
     wall: { type: "integer", minimum: 1, maximum: WALLS_PER_HEXAGON },
     shelf: { type: "integer", minimum: 1, maximum: SHELVES_PER_WALL },
     volume: { type: "integer", minimum: 1, maximum: VOLUMES_PER_SHELF },
-    page: { type: "integer", minimum: 1, maximum: PAGES_PER_BOOK }
+    page: { type: "integer", minimum: 1, maximum: PAGES_PER_BOOK },
+    text: { type: "string", pattern: "^[a-z .]+$", maxLength: CHARS_PER_PAGE }
   }
 });
 var legacyCodec = createCodec({
@@ -23152,7 +23153,7 @@ var legacyCodec = createCodec({
     page: { type: "integer", minimum: 1, maximum: PAGES_PER_BOOK }
   }
 });
-function positionToParams(position) {
+function stateToParams({ position, text: text2 }) {
   const address = hexagonToFloorAddress(position.hexagon);
   return addressCodec.encode({
     floor: toBase36(address.floor),
@@ -23160,31 +23161,37 @@ function positionToParams(position) {
     wall: position.wall,
     shelf: position.shelf,
     volume: position.volume,
-    page: position.page
+    page: position.page,
+    ...text2 === void 0 ? {} : { text: text2 }
   });
 }
-function paramsToPosition(params) {
+function paramsToState(params) {
   const search = typeof params === "string" ? new URLSearchParams(params) : params;
   if (!search.has("floor")) {
     const state3 = legacyCodec.decode(search);
     return {
-      hexagon: fromBase36(state3.hexagon),
-      wall: state3.wall,
-      shelf: state3.shelf,
-      volume: state3.volume,
-      page: state3.page
+      position: {
+        hexagon: fromBase36(state3.hexagon),
+        wall: state3.wall,
+        shelf: state3.shelf,
+        volume: state3.volume,
+        page: state3.page
+      }
     };
   }
   const state2 = addressCodec.decode(search);
   return {
-    hexagon: floorAddressToHexagon({
-      floor: fromBase36(state2.floor),
-      hexagon: fromBase36(state2.hexagon)
-    }),
-    wall: state2.wall,
-    shelf: state2.shelf,
-    volume: state2.volume,
-    page: state2.page
+    position: {
+      hexagon: floorAddressToHexagon({
+        floor: fromBase36(state2.floor),
+        hexagon: fromBase36(state2.hexagon)
+      }),
+      wall: state2.wall,
+      shelf: state2.shelf,
+      volume: state2.volume,
+      page: state2.page
+    },
+    ...state2.text === void 0 ? {} : { text: state2.text }
   };
 }
 
@@ -23200,32 +23207,40 @@ var state = {
   lines: [],
   expanded: { hexagon: false, floor: false }
 };
-function positionUrl(position) {
-  return "?" + positionToParams(position).toString();
+function positionUrl(position, text2) {
+  return "?" + stateToParams({ position, text: text2 }).toString();
 }
 function clearPositionUrl() {
   history.replaceState(null, "", globalThis.location.pathname);
 }
-async function showPosition(position, routeUpdate) {
+async function showPosition(position, routeUpdate, text2) {
   state.position = position;
   state.expanded = { hexagon: false, floor: false };
   if (routeUpdate === "push") {
-    history.pushState(null, "", positionUrl(position));
+    history.pushState(null, "", positionUrl(position, text2));
   } else if (routeUpdate === "replace") {
-    history.replaceState(null, "", positionUrl(position));
+    history.replaceState(null, "", positionUrl(position, text2));
   }
-  const text2 = pageToText(await encrypt(positionToIndex(position)));
+  const pageText = pageToText(await encrypt(positionToIndex(position)));
   state.lines = Array.from(
     { length: LINES_PER_PAGE },
-    (_, lineIndex) => text2.slice(lineIndex * CHARS_PER_LINE, (lineIndex + 1) * CHARS_PER_LINE)
+    (_, lineIndex) => pageText.slice(lineIndex * CHARS_PER_LINE, (lineIndex + 1) * CHARS_PER_LINE)
   );
   import_mithril.default.redraw();
 }
 function syncFromUrl() {
   try {
-    const position = paramsToPosition(globalThis.location.search.slice(1));
+    const { position, text: text2 } = paramsToState(globalThis.location.search.slice(1));
     positionToIndex(position);
-    showPosition(position, "none");
+    searchState.sequence++;
+    searchState.input = text2 ?? "";
+    searchState.error = "";
+    searchState.found = text2 === void 0 ? null : {
+      normalised: text2,
+      count: pagesContaining(text2.length),
+      seconds: null
+    };
+    showPosition(position, "none", text2);
   } catch {
     state.position = null;
     state.lines = [];
@@ -23287,7 +23302,7 @@ async function runSearch() {
       seconds
     };
     searchState.error = "";
-    showPosition(indexToPosition(index), "replace");
+    showPosition(indexToPosition(index), "replace", normalised);
   } catch (error) {
     if (sequence !== searchState.sequence) return;
     searchState.error = error.message;
@@ -23314,7 +23329,8 @@ function SearchBox() {
     searchState.found && (0, import_mithril.default)("p.search-message", [
       "found ",
       TeX(magnitudeLatex(searchState.found.count)),
-      ` matching pages in ${searchState.found.seconds}s`
+      " matching pages",
+      searchState.found.seconds !== null && ` in ${searchState.found.seconds}s`
     ])
   ]);
 }
