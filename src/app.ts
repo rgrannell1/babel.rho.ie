@@ -185,7 +185,6 @@ function AddressRow(label: 'hexagon' | 'floor', value: bigint) {
       },
       state.expanded[label] ? encoded : collapseAddress(encoded),
     ),
-    m('button', { onclick: () => navigator.clipboard.writeText(encoded) }, 'copy'),
   ])
 }
 

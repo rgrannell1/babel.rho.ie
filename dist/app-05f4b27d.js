@@ -23329,8 +23329,7 @@ function AddressRow(label, value) {
         onclick: () => state.expanded[label] = !state.expanded[label]
       },
       state.expanded[label] ? encoded : collapseAddress(encoded)
-    ),
-    (0, import_mithril.default)("button", { onclick: () => navigator.clipboard.writeText(encoded) }, "copy")
+    )
   ]);
 }
 function SectionLabel(text2) {
